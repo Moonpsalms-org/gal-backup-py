@@ -45,6 +45,9 @@ def extract_rar(rar_file, extract_to):
         result = subprocess.run(['unrar', 'x', '-y', rar_file, extract_to], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8')
         if result.returncode == 0:
             print(f"解压成功: {rar_file}")
+            # 解压成功后删除原始 RAR 文件
+            os.remove(rar_file)
+            print(f"已删除原始压缩文件: {rar_file}")
         else:
             print(f"解压失败: {result.stderr}")
             raise Exception("解压失败")
@@ -59,12 +62,15 @@ def create_rar(source_dir, output_dir, filename):
 
     output_file = os.path.join(output_dir, f"{filename}.part1.rar")
 
+    # 切换到 source_dir 目录下并压缩内容，确保压缩包中不包含绝对路径
+    original_cwd = os.getcwd()  # 记录当前工作目录
+    os.chdir(source_dir)  # 切换到要压缩的目录
+
     # 调用 rar 命令进行分卷压缩，添加10%的恢复记录，分卷大小为2000M
     rar_command = [
-        'rar', 'a', '-r', '-rr10p', '-v2000m', os.path.join(output_dir, f"{filename}.part"), source_dir
+        'rar', 'a', '-r', '-rr10p', '-v2000m', os.path.join(output_dir, f"{filename}.part"), './'
     ]
 
-    # 使用 UTF-8 编码执行命令
     try:
         result = subprocess.run(rar_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8')
         if result.returncode == 0:
@@ -72,9 +78,8 @@ def create_rar(source_dir, output_dir, filename):
         else:
             print(f"压缩失败: {result.stderr}")
             raise Exception("压缩失败")
-    except UnicodeEncodeError as e:
-        print(f"编码错误: {e}")
-        raise
+    finally:
+        os.chdir(original_cwd)  # 压缩完后切换回原来的工作目录
 
 # 主函数
 def main():

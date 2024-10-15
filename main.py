@@ -63,7 +63,7 @@ def create_rar(source_dir, output_dir, filename):
 
     output_file = os.path.join(output_dir, f"{filename}.part1.rar")  # 默认的输出文件名，如果分卷需要
     rar_command = [
-        'rar', 'a', '-r', '-rr10p', '-v2000m', os.path.join(output_dir, f"{filename}.part"), './'
+        'rar', 'a', '-r', '-rr10p', '-v2000m', os.path.join(output_dir, f"{filename}"), './'
     ]
 
     original_cwd = os.getcwd()  # 记录当前工作目录

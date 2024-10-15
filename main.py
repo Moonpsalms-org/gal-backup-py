@@ -3,6 +3,7 @@ import requests
 import subprocess
 import urllib.parse
 import sys
+import shutil  # 用于删除解压后的文件夹内容
 
 # 强制使用 UTF-8 编码来避免处理非ASCII字符时的问题
 sys.stdin.reconfigure(encoding='utf-8')
@@ -60,21 +61,33 @@ def create_rar(source_dir, output_dir, filename):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    output_file = os.path.join(output_dir, f"{filename}.part1.rar")
-
-    # 切换到 source_dir 目录下并压缩内容，确保压缩包中不包含绝对路径
-    original_cwd = os.getcwd()  # 记录当前工作目录
-    os.chdir(source_dir)  # 切换到要压缩的目录
-
-    # 调用 rar 命令进行分卷压缩，添加10%的恢复记录，分卷大小为2000M
+    output_file = os.path.join(output_dir, f"{filename}.part1.rar")  # 默认的输出文件名，如果分卷需要
     rar_command = [
         'rar', 'a', '-r', '-rr10p', '-v2000m', os.path.join(output_dir, f"{filename}.part"), './'
     ]
+
+    original_cwd = os.getcwd()  # 记录当前工作目录
+    os.chdir(source_dir)  # 切换到要压缩的目录
 
     try:
         result = subprocess.run(rar_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8')
         if result.returncode == 0:
             print(f"成功压缩: {output_file}")
+
+            # 判断是否生成了分卷，如果没有，则重命名为 .rar
+            if not any(".part2.rar" in f for f in os.listdir(output_dir)):
+                single_file = os.path.join(output_dir, f"{filename}.part")
+                renamed_file = os.path.join(output_dir, f"{filename}.rar")
+                os.rename(single_file, renamed_file)
+                print(f"文件重命名为: {renamed_file}")
+
+            # 压缩成功后，删除解压目录中的文件内容，但保留目录
+            for root, dirs, files in os.walk(source_dir):
+                for file in files:
+                    os.remove(os.path.join(root, file))
+                for dir in dirs:
+                    shutil.rmtree(os.path.join(root, dir))
+            print(f"已清空解压目录: {source_dir}")
         else:
             print(f"压缩失败: {result.stderr}")
             raise Exception("压缩失败")

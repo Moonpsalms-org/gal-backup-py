@@ -81,13 +81,10 @@ def create_rar(source_dir, output_dir, filename):
                 os.rename(single_file, renamed_file)
                 print(f"文件重命名为: {renamed_file}")
 
-            # 压缩成功后，删除解压目录中的文件内容，但保留目录
-            for root, dirs, files in os.walk(source_dir):
-                for file in files:
-                    os.remove(os.path.join(root, file))
-                for dir in dirs:
-                    shutil.rmtree(os.path.join(root, dir))
-            print(f"已清空解压目录: {source_dir}")
+            # 压缩成功后，删除解压目录中的文件和文件夹
+            shutil.rmtree(source_dir)
+            print(f"已删除解压目录及其内容: {source_dir}")
+
         else:
             print(f"压缩失败: {result.stderr}")
             raise Exception("压缩失败")
